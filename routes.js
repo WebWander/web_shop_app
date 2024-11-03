@@ -11,12 +11,12 @@ initDB().then(database => {
 });
 
 router.post('/register', async (req, res) => {
-    const { name, password, role } = req.body;
+    const { username, password, role } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log('hashedPassword:', hashedPassword);
+    
 
     try {
-        await db.run('INSERT INTO users (name, password, role) VALUES (?, ?, ?)', [name, hashedPassword, role]);
+        await db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [username, hashedPassword, role]);
         res.status(201).json({ message: 'User created' });
     } catch (error) {
       console.error('Error in /register route:', error);
@@ -27,8 +27,8 @@ router.post('/register', async (req, res) => {
 
 
 router.post('/login', async (req, res) => {
-    const { name, password } = req.body;
-    const user = await db.get('SELECT * FROM users WHERE name = ?', [name]);
+    const { username, password } = req.body;
+    const user = await db.get('SELECT * FROM users WHERE username = ?', [username]);
 
    if (user && await bcrypt.compare(password, user.password)) {
        const token = generateToken(user);
@@ -45,11 +45,11 @@ router.get('/', (req, res) => {
 });
 
 router.get('/userpage', authencateToken, (req, res) => {
-  res.send(`Welcome user ${req.user.name}`);
+  res.send(`Welcome user ${req.user.username}`);
 });
 
 router.get('/adminpage', authencateToken, authorizeRole('admin'), (req, res) => {
-  res.send(`Welcome admin ${req.user.name}`);
+  res.send(`Welcome admin ${req.user.username}`);
 });
 
 export default router;

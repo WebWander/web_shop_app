@@ -12,7 +12,7 @@ export const initDB = async () => {
     
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT UNIQUE,
+      username TEXT UNIQUE,
       password TEXT NOT NULL,
       role TEXT NOT NULL
     );
