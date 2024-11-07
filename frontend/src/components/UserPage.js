@@ -1,6 +1,8 @@
 import React, { useContext, useEffect, useState } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../App';
+import BookList from './Booklist';
+import CommentsSection from './CommentsSection';
 
 function UserPage() {
     const { authToken } = useContext(AuthContext);
@@ -31,7 +33,9 @@ function UserPage() {
 
     return (
         <div style={{ textAlign: 'center', marginTop: '20px' }}>
-            <h2>Welcome {userData.username}!</h2>
+           <BookList />
+           {/* Render the CommentsSection component for user-related comments */}
+           <CommentsSection entityId={userData.id} entityType="book" />
         </div>
     );
 }

@@ -13,7 +13,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  margin-top: 300px;
+  margin-top: 200px;
   min-height: 100vh;
 }
 
@@ -172,7 +172,7 @@ button:hover {
   cursor: pointer;
   transition: background 0.3s;
   margin-top: 50px;
-  margin-left: 200px;
+  margin-left: 70px;
   width: 50%; 
 }
 
@@ -184,6 +184,100 @@ p {
   text-align: center;
   color: #666;
 }
+
+/* App.css */
+
+/* Container for the book list */
+.book-list-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 columns */
+  gap: 20px;
+  padding: 20px;
+}
+/* Individual book card styling */
+.book-card {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 16px;
+  background-color: #fff;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.book-card:hover {
+  transform: translateY(-4px);
+}
+
+.book-card h3 {
+  font-size: 1.2rem;
+  color: #007185; /* Amazon-like color */
+  margin: 8px 0;
+}
+
+.book-card p {
+  margin: 4px 0;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.book-card .price {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #B12704; /* Amazon-like price color */
+}
+
+.book-card .stock {
+  color: #111;
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
+/* Add to Cart button styling */
+.book-card button {
+  width: 100%;
+  background-color: #ffa41b;
+  color: #111;
+  border: none;
+  padding: 10px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.book-card button:disabled {
+  background-color: #e0e0e0;
+  cursor: not-allowed;
+}
+
+.book-card button:hover:enabled {
+  background-color: #f08d12;
+}
+
+/* Message styling */
+.message {
+  text-align: center;
+  font-size: 1rem;
+  color: #111;
+  padding: 10px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  background-color: #f3f3f3;
+}
+
+@media (max-width: 1024px) {
+  .book-list-container {
+      grid-template-columns: repeat(2, 1fr); 
+  }
+}
+
+@media (max-width: 768px) {
+  .book-list-container {
+      grid-template-columns: 1fr; 
+  }
+}
+
 
 /* Responsive Design */
 @media (max-width: 600px) {

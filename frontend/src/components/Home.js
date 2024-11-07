@@ -7,8 +7,8 @@ function Home() {
     const navigate = useNavigate();
     return (
         <div>
-            <h1>Welcome to NetCourse</h1>
-            <p>Unlock Your Potential with Online Learning with diverse selection of expertly designed courses tailored to your needs.</p>
+            <h1>Welcome to Booklist</h1>
+            <p>Check our available books.</p>
             <button onClick={() => navigate('/register')} className="reg-button">Get Started</button >
         </div>
     );
