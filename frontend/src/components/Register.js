@@ -4,6 +4,7 @@ import axios from 'axios';
 function Register() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    // eslint-disable-next-line
     const [role, setRole] = useState('user');
     const [message, setMessage] = useState('');
 
@@ -23,10 +24,10 @@ function Register() {
             <form onSubmit={handleRegister}>
                 <input type="text" placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} required />
                 <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
-                <select value={role} onChange={e => setRole(e.target.value)}>
+                {/*<select value={role} onChange={e => setRole(e.target.value)}>
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
-                </select>
+                </select>*/}
                 <button type="submit">Register</button>
             </form>
             <p>{message}</p>

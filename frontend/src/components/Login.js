@@ -15,8 +15,9 @@ function Login() {
         try {
             const response = await axios.post(' http://localhost:5000/login', { username, password });
             setAuthToken(response.data.token);
+            setUsername(username);
             setMessage('Login successful');
-            navigate('/home');
+            navigate('/userpage');
         } catch (error) {
             setMessage('Invalid credentials');
         }
@@ -25,12 +26,17 @@ function Login() {
     return (
         <div>
             <h2>Login</h2>
-            <form onSubmit={handleLogin}>
+            <form onSubmit={handleLogin} style={{marginBottom: '20px'}}>
                 <input type="text" placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} required />
                 <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
-                <button type="submit">Login</button>
+                <button type="submit" className="btn-primary">Login</button>
             </form>
             <p>{message}</p>
+            <div></div>
+            <div></div>
+            <p>New customer?</p>
+            <p></p>
+            <button onClick={() => navigate('/register')} className="btn-primary">Register</button >
         </div>
     );
 }
