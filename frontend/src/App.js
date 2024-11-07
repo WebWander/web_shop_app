@@ -7,6 +7,8 @@ import Review from './components/Review';
 import Home from './components/Home';
 import UserPage from './components/UserPage';
 import BookList from './components/Booklist';
+import Cart from './components/Cart';
+
 import axios from 'axios';
 // eslint-disable-next-line
 import { ShoppingBag, User, Search, Package } from 'lucide-react';
@@ -88,6 +90,8 @@ useEffect(() => {
           <Route path="/review" element={<Review />} />
           <Route path="/userpage" element={<UserPage />} />
           <Route path="/booklist" element={<BookList />} />
+          <Route path="/cart" element={<Cart />} />
+          
           
         
         </Routes>

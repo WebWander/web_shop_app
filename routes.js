@@ -215,21 +215,33 @@ router.get('/books', async (req, res) => {
 
 
 router.post('/add-to-cart', authenticateToken, async (req, res) => {
-  const { bookId } = req.body; // We don't need `quantity` as it's always 1 for each click
-  const userId = req.user.id; // Use the user ID from the token payload
+  const { bookId } = req.body;
+  const userId = req.user.id;
 
   if (!userId) {
     return res.status(400).json({ message: 'User ID is missing from the token' });
   }
 
   try {
+    // Check if user has already reached the limit of 5 unique items
+    const uniqueItemsCount = await db.get(
+      'SELECT COUNT(DISTINCT book_id) as count FROM cart WHERE user_id = ?',
+      [userId]
+    );
+
+    if (uniqueItemsCount.count >= 5 && !(await db.get('SELECT * FROM cart WHERE user_id = ? AND book_id = ?', [userId, bookId]))) {
+      return res.status(400).json({
+        message: 'You have reached the limit of 5 unique items in your cart.'
+      });
+    }
+
     // Check stock availability
     const book = await db.get('SELECT stock FROM books WHERE id = ?', [bookId]);
     if (!book || book.stock < 1) {
       return res.status(400).json({ message: 'Out of stock' });
     }
 
-    // Check current quantity of the item in the cart
+    // Check the current quantity of the item in the cart
     const existingCartItem = await db.get(
       'SELECT quantity FROM cart WHERE user_id = ? AND book_id = ?',
       [userId, bookId]
@@ -294,6 +306,71 @@ router.post('/add-comment', authenticateToken, async (req, res) => {
     res.status(201).json({ message: 'Comment added successfully' });
   } catch (error) {
     console.error('Error adding comment:', error); // Log the specific error
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+router.get('/cart', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+  try {
+    // Fetch cart items with book name, price, and quantity
+    const cartItems = await db.all(`
+      SELECT 
+        books.id AS bookId,
+        books.title AS name,
+        books.price AS price,
+        cart.quantity AS quantity
+      FROM cart
+      JOIN books ON cart.book_id = books.id
+      WHERE cart.user_id = ?
+    `, [userId]);
+
+    res.json(cartItems);
+  } catch (error) {
+    console.error('Error fetching cart details:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+
+router.post('/update-cart-quantity', authenticateToken, async (req, res) => {
+  const { bookId, quantity } = req.body;
+  const userId = req.user.id;
+
+  if (quantity < 1) {
+    return res.status(400).json({ message: 'Quantity must be at least 1' });
+  }
+
+  try {
+    // Check stock availability
+    const book = await db.get('SELECT stock FROM books WHERE id = ?', [bookId]);
+    if (!book || book.stock < quantity) {
+      return res.status(400).json({ message: 'Not enough stock available' });
+    }
+
+    // Update cart quantity if stock is sufficient
+    await db.run(
+      'UPDATE cart SET quantity = ? WHERE user_id = ? AND book_id = ?',
+      [quantity, userId, bookId]
+    );
+
+    res.json({ message: 'Cart quantity updated' });
+  } catch (error) {
+    console.error('Error updating cart quantity:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+router.post('/remove-from-cart', authenticateToken, async (req, res) => {
+  const { bookId } = req.body;
+  const userId = req.user.id;
+
+  try {
+    // Remove the item from the cart
+    await db.run('DELETE FROM cart WHERE user_id = ? AND book_id = ?', [userId, bookId]);
+    res.json({ message: 'Item removed from cart' });
+  } catch (error) {
+    console.error('Error removing item from cart:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
