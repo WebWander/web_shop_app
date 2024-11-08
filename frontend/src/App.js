@@ -8,10 +8,12 @@ import Home from './components/Home';
 import UserPage from './components/UserPage';
 import BookList from './components/Booklist';
 import Cart from './components/Cart';
+import { Helmet } from 'react-helmet';
+
 
 import axios from 'axios';
 // eslint-disable-next-line
-import { ShoppingBag, User, Search, Package } from 'lucide-react';
+import { User } from 'lucide-react';
 
 import './App.css';
 
@@ -21,6 +23,8 @@ function App() {
   const [authToken, setAuthToken] = useState(null);
   const [username, setUsername] = useState(null);
   const [cartQuantity, setCartQuantity] = useState(0);
+
+
 
   const incrementCartQuantity = (newQuantity) => {
     setCartQuantity(newQuantity);
@@ -54,13 +58,15 @@ useEffect(() => {
           </div>
           <Link to="/products" aria-label="Products">
             <Package className="icon" />
-          </Link>
-          {/*<Link to="/">Home</Link>*/}
+          </Link>*/}
+        
           <div style={{ fontWeight: 'bold', fontSize: '1.5rem', color: 'white'}}>Booklist</div>
+          <Link to="/userpage" aria-label="Userpage">Home</Link>
           {username ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: 'auto' }}>
               <User className="icon" />
               <span>{username}</span>
+              
             </div>
           ) : (
             <Link to="/login" aria-label="Login" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: 'auto' }}>

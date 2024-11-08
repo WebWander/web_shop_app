@@ -223,15 +223,16 @@ router.post('/add-to-cart', authenticateToken, async (req, res) => {
   }
 
   try {
-    // Check if user has already reached the limit of 5 unique items
-    const uniqueItemsCount = await db.get(
-      'SELECT COUNT(DISTINCT book_id) as count FROM cart WHERE user_id = ?',
+    // Calculate the total quantity of books currently in the cart for this user
+    const totalBooksInCart = await db.get(
+      'SELECT SUM(quantity) as total FROM cart WHERE user_id = ?',
       [userId]
     );
 
-    if (uniqueItemsCount.count >= 5 && !(await db.get('SELECT * FROM cart WHERE user_id = ? AND book_id = ?', [userId, bookId]))) {
+    // Ensure that the total number of books in the cart does not exceed 4
+    if ((totalBooksInCart.total || 0) >= 4) {
       return res.status(400).json({
-        message: 'You have reached the limit of 5 unique items in your cart.'
+        message: 'You have reached the total limit of 4 books in your cart.'
       });
     }
 
@@ -241,31 +242,45 @@ router.post('/add-to-cart', authenticateToken, async (req, res) => {
       return res.status(400).json({ message: 'Out of stock' });
     }
 
-    // Check the current quantity of the item in the cart
+    // Check if the book is already in the cart
     const existingCartItem = await db.get(
       'SELECT quantity FROM cart WHERE user_id = ? AND book_id = ?',
       [userId, bookId]
     );
 
-    if (existingCartItem && existingCartItem.quantity >= 4) {
-      return res.status(400).json({ message: 'You can only add up to 4 of each item in the cart.' });
+    // Calculate the new total quantity if this book is added
+    const newTotalQuantity = (totalBooksInCart.total || 0) + 1;
+
+    // If the new total exceeds 4, prevent addition
+    if (newTotalQuantity > 4) {
+      return res.status(400).json({
+        message: 'Adding this book would exceed the total limit of 4 books in your cart.'
+      });
     }
 
-    // Update cart in the database, or insert a new row if not existing and below the limit
-    await db.run(`
-      INSERT INTO cart (user_id, book_id, quantity) 
-      VALUES (?, ?, 1)
-      ON CONFLICT(user_id, book_id) DO UPDATE SET quantity = quantity + 1
-      WHERE quantity < 4
-    `, [userId, bookId]);
+    // Update cart in the database, or insert a new row if not existing
+    if (existingCartItem) {
+      await db.run(
+        'UPDATE cart SET quantity = quantity + 1 WHERE user_id = ? AND book_id = ?',
+        [userId, bookId]
+      );
+    } else {
+      await db.run(
+        'INSERT INTO cart (user_id, book_id, quantity) VALUES (?, ?, 1)',
+        [userId, bookId]
+      );
+    }
 
     // Deduct 1 from stock in the books table
     await db.run('UPDATE books SET stock = stock - 1 WHERE id = ?', [bookId]);
 
     // Get updated cart quantity for the user
-    const cartQuantity = await db.get('SELECT SUM(quantity) as total FROM cart WHERE user_id = ?', [userId]);
+    const updatedTotalBooks = await db.get(
+      'SELECT SUM(quantity) as total FROM cart WHERE user_id = ?',
+      [userId]
+    );
 
-    res.json({ message: 'Added to cart', cartQuantity: cartQuantity.total });
+    res.json({ message: 'Added to cart', cartQuantity: updatedTotalBooks.total });
   } catch (error) {
     console.error('Error adding to cart:', error);
     res.status(500).json({ message: 'Internal server error' });
@@ -284,31 +299,8 @@ router.get('/cart-quantity', authenticateToken, async (req, res) => {
   }
 });
 
-router.post('/add-comment', authenticateToken, async (req, res) => {
-  const { content } = req.body;
-  const userId = req.user.id;
-  const username = req.user.username;
 
-  // Debugging: Log the incoming data
-  console.log('Received data:', { content, userId, username });
 
-  // Validate input
-  if (!content) {
-    console.error('Error: Comment content is required');
-    return res.status(400).json({ message: 'Comment content is required' });
-  }
-
-  try {
-    await db.run(
-      'INSERT INTO comments (user_id, username, content) VALUES (?, ?, ?)',
-      [userId, username, content]
-    );
-    res.status(201).json({ message: 'Comment added successfully' });
-  } catch (error) {
-    console.error('Error adding comment:', error); // Log the specific error
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
 
 router.get('/cart', authenticateToken, async (req, res) => {
   const userId = req.user.id;
@@ -375,22 +367,44 @@ router.post('/remove-from-cart', authenticateToken, async (req, res) => {
   }
 });
 
-
-
-// Get comments filtered by entityId and entityType
-router.get('/comments', async (req, res) => {
-  const { entityId, entityType } = req.query;
+router.get('/feedbacks', authenticateToken, async (req, res) => {
   try {
-      const comments = await db.all(
-          'SELECT * FROM comments WHERE entity_id = ? AND entity_type = ? ORDER BY timestamp DESC',
-          [entityId, entityType]
-      );
-      res.json(comments);
+    const feedbacks = await db.all('SELECT * FROM feedback ORDER BY timestamp DESC');
+    res.json(feedbacks);
   } catch (error) {
-      console.error('Error fetching comments:', error);
-      res.status(500).json({ message: 'Internal server error' });
+    console.error('Error fetching feedbacks:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
+
+router.post('/add-feedback', authenticateToken, async (req, res) => {
+  const { content, rating, email } = req.body;
+  const userId = req.user.id;
+  const username = req.user.username;
+
+  if (!content || !rating) {
+    return res.status(400).json({ message: 'Feedback content and rating are required' });
+  }
+
+  try {
+    await db.run(
+      'INSERT INTO feedback (user_id, username, content, rating, email) VALUES (?, ?, ?, ?, ?)',
+      [userId, username, content, rating, email]
+    );
+
+    res.status(201)
+      .set({
+        'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' https://trusted-styles-source.com; img-src 'self' data:; connect-src 'self'; font-src 'self' https://trusted-fonts-source.com; object-src 'none'; upgrade-insecure-requests",
+        'X-Content-Type-Options': 'nosniff',
+        'X-XSS-Protection': '1; mode=block'
+      })
+      .json({ message: 'Feedback submitted successfully' });
+  } catch (error) {
+    console.error('Error submitting feedback:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 
 
 
